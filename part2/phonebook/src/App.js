@@ -1,19 +1,47 @@
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import Filter from "./components/Filter";
 import Form from "./components/Form";
 import Phonebook from "./components/Phonebook";
+import numService from "./services/numbers.js"
+import Notification from "./components/Notification";
+import './index.css'
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
+  const [persons, setPersons] = useState([])
 
   const [newName, setNewName] = useState('');
   const [newNum, setNewNum] = useState('');
   const [filter, setFilter] = useState('');
+  const [message, setMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    numService.getAll()
+    .then( initialNums => {setPersons(initialNums)})
+  }, [])
+
+  const deleteObj = id => {
+    const newPersons = persons.reduce(
+      function(arr, person){
+        return (
+          person.id !== id? arr.concat(person)
+          : arr
+        )
+      }, []
+    )
+    console.log(newPersons);
+    setPersons(newPersons);
+  }
+
+  const handleError = (p) => {
+    setErrorMessage(`Information for ${p.name} was already deleted.`)
+    setTimeout(
+      () =>{
+        setErrorMessage(null)
+      }, 3000
+    )
+    setPersons(persons.filter(person => person.id !== p.id))
+  }
 
   const handleClick = (event) => {
     event.preventDefault();
@@ -25,15 +53,45 @@ const App = () => {
 
     const re = new RegExp(`^${newName}$`, 'i');
     const nameExists = persons.filter(person => person.name.match(re));
-    
+
     if (nameExists.length === 0){
-      setPersons(persons.concat({name:newName, number: newNum, id: persons.length + 1}));
-      setNewName('');
-      setNewNum('');
+      const obj = {name:newName, number: newNum, id: persons[persons.length-1].id + 1};
+      
+      numService
+        .create(obj)
+        .then(
+          returnedObj => {
+            setPersons(persons.concat(returnedObj))
+            setMessage(`${returnedObj.name} was added to the phonebook.`)
+            setTimeout(
+              () =>{
+                setMessage(null)
+              }, 3000
+            )
+          }
+        )
     }
-    else{
-      alert(`${newName} already exists in the phonebook`);
+    else if (window.confirm(`${newName} already exists in the phonebook. Do you want to replace the old number?`)){
+      const newPerson = {...nameExists[0]}
+      newPerson.number = newNum
+      numService
+        .update(newPerson.id, newPerson)
+        .then(response => setPersons(persons.map(person => 
+          person.id === newPerson.id ? response : person))
+        )
+        .catch((error) => {
+          setErrorMessage(`Information for ${newPerson.name} was already deleted.`)
+          setTimeout(
+            () =>{
+              setErrorMessage(null)
+            }, 3000
+          )
+          setPersons(persons.filter(person => person.id !== newPerson.id))
+        })
     }
+
+    setNewName('');
+    setNewNum('');
   }
 
   const handleNameChange = (event) => {
@@ -45,15 +103,17 @@ const App = () => {
     setNewNum(event.target.value);
   }
   
-  const handleFilter = (event) =>{
+  const handleFilter = (event) => {
     setFilter(event.target.value);
   }
 
   return (
     <>
-      <h2>Phonebook</h2>
-      <Filter filter = {filter} handleFilter = {handleFilter}/>
+      <h2 className="top-heading">Phonebook</h2>
+      <Notification message = {message} classType = {"add"}/>
+      <Notification message = {errorMessage} classType = {"error"}/>
 
+      <Filter filter = {filter} handleFilter = {handleFilter}/>
       <h2>Add a new entry</h2>
       <Form 
         newName={newName}
@@ -64,7 +124,12 @@ const App = () => {
       />
 
       <h2>Numbers</h2>
-      <Phonebook persons = {persons} filter = {filter}/>
+      <Phonebook 
+        persons = {persons}
+        filter = {filter}
+        deleteObj = {deleteObj}
+        handleError = {handleError}
+      />
     </>
   );
 }

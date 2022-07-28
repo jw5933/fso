@@ -1,0 +1,25 @@
+.add{
+    color: green;
+    background: wheat;
+    border-style: solid;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+.error{
+    color: red;
+    background: pink;
+    border-style: solid;
+    padding: 8px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+h2{
+    margin: 3px;
+    padding-top: 20px;
+}
+h2.top-heading{
+    padding-top: 0px;
+}
