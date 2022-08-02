@@ -17,7 +17,9 @@ const App = () => {
 
   useEffect(() => {
     numService.getAll()
-    .then( initialNums => {setPersons(initialNums)})
+    .then(initialNums => {
+      setPersons(initialNums)
+    })
   }, [])
 
   const deleteObj = id => {
