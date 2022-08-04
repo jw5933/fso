@@ -31,7 +31,7 @@ const App = () => {
         )
       }, []
     )
-    console.log(newPersons);
+    //console.log(newPersons);
     setPersons(newPersons);
   }
 
@@ -47,7 +47,7 @@ const App = () => {
 
   const handleClick = (event) => {
     event.preventDefault();
-    //console.log(newName);
+
     if (newName === '' || newNum === ''){
       alert('Please enter valid name/number');
       return;
@@ -57,12 +57,14 @@ const App = () => {
     const nameExists = persons.filter(person => person.name.match(re));
 
     if (nameExists.length === 0){
-      const obj = {name:newName, number: newNum, id: persons[persons.length-1].id + 1};
-      
+      const obj = {name:newName, number: newNum};
+      //console.log(obj)
+
       numService
         .create(obj)
         .then(
           returnedObj => {
+            //console.log(returnedObj)
             setPersons(persons.concat(returnedObj))
             setMessage(`${returnedObj.name} was added to the phonebook.`)
             setTimeout(
@@ -73,6 +75,7 @@ const App = () => {
           }
         )
     }
+
     else if (window.confirm(`${newName} already exists in the phonebook. Do you want to replace the old number?`)){
       const newPerson = {...nameExists[0]}
       newPerson.number = newNum

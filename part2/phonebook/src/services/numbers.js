@@ -10,7 +10,7 @@ const create = obj => {
     const request = axios.post(baseUrl, obj)
     return request.then(response => response.data)
 }
-const update = (id, obj)=> {
+const update = (id, obj) => {
     const request = axios.put(`${baseUrl}/${id}`, obj)
     return request.then(response => response.data)
 }
