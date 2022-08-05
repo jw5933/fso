@@ -48,55 +48,65 @@ const App = () => {
   const handleClick = (event) => {
     event.preventDefault();
 
-    if (newName === '' || newNum === ''){
-      alert('Please enter valid name/number');
-      return;
-    }
+    // if (newName === '' || newNum === ''){
+    //   alert('Please enter valid name/number');
+    //   return;
+    // }
 
     const re = new RegExp(`^${newName}$`, 'i');
     const nameExists = persons.filter(person => person.name.match(re));
 
     if (nameExists.length === 0){
       const obj = {name:newName, number: newNum};
-      //console.log(obj)
 
+      //creating new phonebook entry
       numService
-        .create(obj)
-        .then(
-          returnedObj => {
-            //console.log(returnedObj)
-            setPersons(persons.concat(returnedObj))
-            setMessage(`${returnedObj.name} was added to the phonebook.`)
-            setTimeout(
-              () =>{
-                setMessage(null)
-              }, 3000
-            )
-          }
-        )
-    }
+      .create(obj)
+      .then(
+        returnedObj => {
+          setPersons(persons.concat(returnedObj))
+          setMessage(`${returnedObj.name} was added to the phonebook.`)
+          setTimeout(
+            () =>{
+              setMessage(null)
+            }, 3000
+          )
 
+          setNewName('');
+          setNewNum('');
+        }
+      )
+      .catch(error => {
+        //console.log(error)
+        setErrorMessage(error.response.data);
+        setTimeout(
+          () =>{
+            setErrorMessage(null)
+          }, 5000
+        )
+      })
+    }
     else if (window.confirm(`${newName} already exists in the phonebook. Do you want to replace the old number?`)){
       const newPerson = {...nameExists[0]}
       newPerson.number = newNum
+      //updating number
       numService
-        .update(newPerson.id, newPerson)
-        .then(response => setPersons(persons.map(person => 
-          person.id === newPerson.id ? response : person))
+      .update(newPerson.id, newPerson)
+      .then(data => {
+        setPersons(persons.map(person => person.id === newPerson.id ? data : person))
+        setNewName('');
+        setNewNum('');
+      })
+      .catch(error => {
+        //console.log(error)
+        setErrorMessage(error.response.data)
+        setTimeout(
+          () =>{
+            setErrorMessage(null)
+          }, 3000
         )
-        .catch((error) => {
-          setErrorMessage(`Information for ${newPerson.name} was already deleted.`)
-          setTimeout(
-            () =>{
-              setErrorMessage(null)
-            }, 3000
-          )
-          setPersons(persons.filter(person => person.id !== newPerson.id))
-        })
+      })
     }
-
-    setNewName('');
-    setNewNum('');
   }
 
   const handleNameChange = (event) => {
