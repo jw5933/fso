@@ -10,7 +10,10 @@ blogsRouter.get('/', async(request, response) => {
     response.json(blogs)
 })
 
-blogsRouter.post('/', async (request, response, next) => {
+blogsRouter.post('/', async (request, response) => {
+    if (!request.user) {
+        return response.status(401).json({ error: 'token missing or invalid' })
+    }
     const body = request.body
     const user = request.user
     
@@ -19,7 +22,7 @@ blogsRouter.post('/', async (request, response, next) => {
         author: body.author,
         url: body.url,
         likes: body.likes,
-        user: user._id,
+        user: user.id,
     })
 
     const savedBlog = await blog.save()
@@ -49,8 +52,17 @@ blogsRouter.delete('/:id', async (request, response, next) => {
 })
 
 blogsRouter.put('/:id', async (request, response, next) => {
-    const blog = {likes: request.body.likes}
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {new: true})
+    if (!request.user) {
+        return response.status(401).json({ error: 'token missing or invalid' })
+    }
+    const blog = await Blog.findById(request.params.id)
+    if (blog && request.user._id.toString() != blog.user.toString()) {
+        return response.status(401).json({error: 'user invalid'})
+    }
+    const newBlog = {likes: request.body.likes}
+    const updatedBlog = await Blog
+        .findByIdAndUpdate(request.params.id, newBlog, {new: true})
+        .populate('user', {blogs: 0})
     if (updatedBlog) response.json(updatedBlog)
     else response.status(204).end()
 })
